@@ -16,70 +16,71 @@
 # This specific template is located at:
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Getting-Started.gitlab-ci.yml
 name: test automation
-on: [push]
-stages:
-- test
-- history_copy
-- generate_report
-- publish_report
+on: push
+job: 
+    stages:
+    - test
+    - history_copy
+    - generate_report
+    - publish_report
 
-run_tests:
-stage: test
-image: python:3.10
-before_script:
-    - pwd
-    - pip install virtualenv
-    - python -m venv venv
-    - source venv/bin/activate
-    - pip install -r requirements.txt       
-    - export CLIENT_ID=test-client
-    - export CLIENT_SECRET=891707ee-d6cd-4744-a28d-058829e30f80
-    - export ENV_TYPE="UAT"
-script:
-    - pytest projects/upi_switch/api/tests
-allow_failure: true
-artifacts:
-    when: always
-    paths:
-        - results/allure/
-    expire_in: 1 day
-
-history_copy:
-    stage: history_copy
-    image: python:3.9
-    artifacts:
-    when: always
-    paths:
-        - results/allure/
-    expire_in: 1 day
+    run_tests:
+    stage: test
+    image: python:3.10
+    before_script:
+        - pwd
+        - pip install virtualenv
+        - python -m venv venv
+        - source venv/bin/activate
+        - pip install -r requirements.txt       
+        - export CLIENT_ID=test-client
+        - export CLIENT_SECRET=891707ee-d6cd-4744-a28d-058829e30f80
+        - export ENV_TYPE="UAT"
     script:
-    - 'curl --location --output artifacts.zip --header "PRIVATE-TOKEN: glpat-CaVzGZqz5FtWEHffFP1X" "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/jobs/artifacts/$CI_COMMIT_REF_NAME/download?job=pages"'
-    - unzip artifacts.zip
-    - chmod -R 777 public
-    - cp -r ./public/* ./results/allure/
+        - pytest projects/upi_switch/api/tests
     allow_failure: true
+    artifacts:
+        when: always
+        paths:
+            - results/allure/
+        expire_in: 1 day
 
-generate_report:
-stage: generate_report
-image: frankescobar/allure-docker-service
-script:
-    - allure generate -c ./results/allure/ -o allure-report
-artifacts:
-    paths:
-    - ./results/allure/
-    - ./allure-report
-    expire_in: 1 day
-rules:
-    - when: always
+    history_copy:
+        stage: history_copy
+        image: python:3.9
+        artifacts:
+        when: always
+        paths:
+            - results/allure/
+        expire_in: 1 day
+        script:
+        - 'curl --location --output artifacts.zip --header "PRIVATE-TOKEN: glpat-CaVzGZqz5FtWEHffFP1X" "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/jobs/artifacts/$CI_COMMIT_REF_NAME/download?job=pages"'
+        - unzip artifacts.zip
+        - chmod -R 777 public
+        - cp -r ./public/* ./results/allure/
+        allow_failure: true
 
-pages:
-stage: publish_report
-script:
-    - mkdir public
-    - cp -r ./allure-report/* public
-artifacts:
-    paths:
-    - public
-    expire_in: never
-needs:
-    - job: generate_report
+    generate_report:
+    stage: generate_report
+    image: frankescobar/allure-docker-service
+    script:
+        - allure generate -c ./results/allure/ -o allure-report
+    artifacts:
+        paths:
+        - ./results/allure/
+        - ./allure-report
+        expire_in: 1 day
+    rules:
+        - when: always
+
+    pages:
+    stage: publish_report
+    script:
+        - mkdir public
+        - cp -r ./allure-report/* public
+    artifacts:
+        paths:
+        - public
+        expire_in: never
+    needs:
+        - job: generate_report

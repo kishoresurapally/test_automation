@@ -12,6 +12,6 @@ xmltodict
 dict2xml
 pandas
 pymongo
-PIL
+Pillow
 pytesseract
 cv2

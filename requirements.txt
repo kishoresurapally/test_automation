@@ -14,4 +14,4 @@ pandas
 pymongo
 Pillow
 pytesseract
-cv2
+opencv-python

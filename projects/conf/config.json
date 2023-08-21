@@ -1,0 +1,21 @@
+{
+  "all": {
+
+
+  },
+  "qa_env": {
+    "url": "https://upi-dev-core.setu.co/",
+    "username": "",
+    "password": ""
+  },
+  "staging": {
+    "url": "https://QA_URl.com",
+    "username": "",
+    "password": ""
+  },
+  "production": {
+    "url": "https://QA_URl.com",
+    "username": "",
+    "password": ""
+  }
+}

@@ -1,0 +1,85 @@
+# This file is a template, and might need editing before it works on your project.
+# This is a sample GitLab CI/CD configuration file that should run without any modifications.
+# It demonstrates a basic 3 stage CI/CD pipeline. Instead of real tests or scripts,
+# it uses echo commands to simulate the pipeline execution.
+#
+# A pipeline is composed of independent jobs that run scripts, grouped into stages.
+# Stages run in sequential order, but jobs within stages run in parallel.
+#
+# For more information, see: https://docs.gitlab.com/ee/ci/yaml/index.html#stages
+#
+# You can copy and paste this template into a new `.gitlab-ci.yml` file.
+# You should not add this template to an existing `.gitlab-ci.yml` file by using the `include:` keyword.
+#
+# To contribute improvements to CI/CD templates, please follow the Development guide at:
+# https://docs.gitlab.com/ee/development/cicd/templates.html
+# This specific template is located at:
+# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Getting-Started.gitlab-ci.yml
+name: test automation
+on: [push]
+ stages:
+    - test
+    - history_copy
+    - generate_report
+    - publish_report
+
+ run_tests:
+    stage: test
+    image: python:3.10
+    before_script:
+        - pwd
+        - pip install virtualenv
+        - python -m venv venv
+        - source venv/bin/activate
+        - pip install -r requirements.txt       
+        - export CLIENT_ID=test-client
+        - export CLIENT_SECRET=891707ee-d6cd-4744-a28d-058829e30f80
+        - export ENV_TYPE="UAT"
+    script:
+        - pytest projects/upi_switch/api/tests
+    allow_failure: true
+    artifacts:
+        when: always
+        paths:
+            - results/allure/
+        expire_in: 1 day
+
+ history_copy:
+     stage: history_copy
+     image: python:3.9
+     artifacts:
+        when: always
+        paths:
+            - results/allure/
+        expire_in: 1 day
+     script:
+        - 'curl --location --output artifacts.zip --header "PRIVATE-TOKEN: glpat-CaVzGZqz5FtWEHffFP1X" "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/jobs/artifacts/$CI_COMMIT_REF_NAME/download?job=pages"'
+        - unzip artifacts.zip
+        - chmod -R 777 public
+        - cp -r ./public/* ./results/allure/
+     allow_failure: true
+
+ generate_report:
+    stage: generate_report
+    image: frankescobar/allure-docker-service
+    script:
+        - allure generate -c ./results/allure/ -o allure-report
+    artifacts:
+        paths:
+        - ./results/allure/
+        - ./allure-report
+        expire_in: 1 day
+    rules:
+        - when: always
+
+ pages:
+    stage: publish_report
+    script:
+        - mkdir public
+        - cp -r ./allure-report/* public
+    artifacts:
+        paths:
+        - public
+        expire_in: never
+    needs:
+        - job: generate_report

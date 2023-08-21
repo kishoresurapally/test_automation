@@ -1,0 +1,17 @@
+pytest
+requests
+jsonschema
+selenium
+flaky
+pytest-parallel
+pytest-html
+allure-pytest
+junit-xml
+webdriver-manager
+xmltodict
+dict2xml
+pandas
+pymongo
+PIL
+pytesseract
+cv2
